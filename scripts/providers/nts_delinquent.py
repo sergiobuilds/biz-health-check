@@ -85,9 +85,10 @@ def _search(tcd: str, search_type: str, value: str, columns: tuple) -> list[dict
     return _parse_rows(resp.text, columns)
 
 
-def lookup(b_no: str, name: str | None = None) -> dict:
+def lookup(b_no: str | None, name: str | None = None) -> dict:
     """고액·상습체납자 명단공개 대조 — 법인 명단(법인명)·개인 명단(상호) 각 1회."""
-    common.normalize_b_no(b_no)  # 입력 검증만 — 명단에는 사업자번호가 없다
+    if b_no is not None:
+        common.normalize_b_no(b_no)  # 입력 검증만 — 명단에는 사업자번호가 없다
     if not (name or "").strip():
         return common.envelope(
             SOURCE, common.STATUS_UNAVAILABLE, common.ORIGIN_PUBLIC,

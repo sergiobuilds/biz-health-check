@@ -40,26 +40,34 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                          "Chrome/126.0 Safari/537.36",
            "Referer": LANDING}
 
-# 한글명은 2026-06-11 각 업종 landing 페이지에서 실측 검증한 것만 등록
-INDUSTRIES = {
-    "general_restaurants": "식품_일반음식점",
-    "rest_cafes": "식품_휴게음식점",
-    "bakeries": "식품_제과점영업",
-    "lodgings": "문화_숙박업",
-    "tourist_accommodations": "문화_관광숙박업",
-    "beauty_salons": "생활_미용업",
-    "barber_shops": "생활_이용업",
-    "public_baths": "생활_목욕장업",
-    "laundries": "생활_세탁업",
-    "pharmacies": "건강_약국",
-    "hospitals": "건강_병원",
-    "clinics": "건강_의원",
-    "karaoke_rooms": "문화_노래연습장업",
-    "pc_bangs": "문화_인터넷컴퓨터게임시설제공업",
-    "fitness_centers": "생활_체력단련장업",
-    "billiard_halls": "생활_당구장업",
-}
+# 업종 slug ↔ 한글명 208종 전수 — 2026-06-11 각 업종 landing 페이지에서
+# 실측 수집(208/208, 실패 0)해 동결 (localdata_industries.json)
+_INDUSTRIES_PATH = pathlib.Path(__file__).with_name("localdata_industries.json")
+INDUSTRIES: dict = json.loads(_INDUSTRIES_PATH.read_text(encoding="utf-8"))
 DEFAULT_INDUSTRIES = ("general_restaurants", "rest_cafes", "lodgings")
+
+
+def resolve_industry(token: str) -> tuple[str | None, list[str]]:
+    """업종 지정 해석 — slug 정확 일치 또는 한글명 부분 일치.
+
+    반환: (slug, 후보 한글명들). 다중/0건 매치면 slug는 None.
+    """
+    token = token.strip()
+    if token in INDUSTRIES:
+        return token, [INDUSTRIES[token]]
+    squeezed = token.replace(" ", "")
+    # 1순위: 한글명 정확 일치 — 카테고리 접두("식품_" 등) 제거형 포함
+    exact = [(slug, nm) for slug, nm in INDUSTRIES.items()
+             if nm.replace(" ", "") == squeezed
+             or nm.split("_", 1)[-1].replace(" ", "") == squeezed]
+    if len(exact) == 1:
+        return exact[0][0], [exact[0][1]]
+    # 2순위: 부분 일치 단일
+    hits = exact or [(slug, nm) for slug, nm in INDUSTRIES.items()
+                     if squeezed in nm.replace(" ", "")]
+    if len(hits) == 1:
+        return hits[0][0], [hits[0][1]]
+    return None, [nm for _, nm in hits]
 
 # 결과에 담을 핵심 컬럼 (CSV 원문 컬럼명 그대로)
 RESULT_COLUMNS = ("사업장명", "영업상태명", "상세영업상태명", "인허가일자", "폐업일자",
@@ -123,8 +131,9 @@ def _search_rows(csv_text: str, name: str) -> list[dict]:
 
 def lookup(b_no: str, name: str | None = None, region: str | None = None,
            industries: list[str] | None = None) -> dict:
-    """인허가 영업상태 조회 — 상호+지역 필수 (자료에 사업자번호 없음)."""
-    common.normalize_b_no(b_no)  # 입력 검증만
+    """인허가 영업상태 조회 — 상호+지역 필수 (자료에 사업자번호 없음, b_no 생략 가능)."""
+    if b_no is not None:
+        common.normalize_b_no(b_no)  # 입력 검증만
     if not (name or "").strip():
         return common.envelope(
             SOURCE, common.STATUS_UNAVAILABLE, common.ORIGIN_PUBLIC,
@@ -145,13 +154,20 @@ def lookup(b_no: str, name: str | None = None, region: str | None = None,
                   + (f"후보 {len(hits)}곳: {', '.join(hits[:8])}. 하나로 지정하세요."
                      if hits else "등록 지자체명과 일치하지 않습니다 (예: 서울종로구).")))
 
-    selected = list(industries) if industries else list(DEFAULT_INDUSTRIES)
-    unknown = [s for s in selected if s not in INDUSTRIES]
-    if unknown:
+    selected, bad = [], []
+    for token in (industries or DEFAULT_INDUSTRIES):
+        slug, cand = resolve_industry(token)
+        if slug:
+            selected.append(slug)
+        else:
+            bad.append(f"'{token}'"
+                       + (f" (후보 {len(cand)}종: {', '.join(cand[:6])})" if cand
+                          else " (일치 업종 없음)"))
+    if bad:
         return common.envelope(
             SOURCE, common.STATUS_UNAVAILABLE, common.ORIGIN_PUBLIC,
-            note=(f"미등록 업종 slug: {', '.join(unknown)}. "
-                  f"지원 업종: {', '.join(sorted(INDUSTRIES))}"))
+            note=(f"업종 특정 실패: {'; '.join(bad)}. slug 또는 한글명(예: 약국, "
+                  "일반음식점, 숙박업)으로 하나씩 지정하세요. 총 208종 지원."))
 
     searched, failures = {}, []
     try:

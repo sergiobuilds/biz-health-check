@@ -65,6 +65,17 @@ def test_localdata_region_resolution_offline():
     assert code is None and hits == []
 
 
+def test_localdata_industry_resolution_offline():
+    """업종 해석 — slug 정확/한글 단일/한글 모호/미존재, 전부 네트워크 없이."""
+    assert localdata_license.resolve_industry("lodgings")[0] == "lodgings"
+    slug, names = localdata_license.resolve_industry("약국")
+    assert slug == "pharmacies" and names == ["건강_약국"]
+    slug, names = localdata_license.resolve_industry("음식점")   # 일반/휴게 등 다중
+    assert slug is None and len(names) >= 2
+    assert localdata_license.resolve_industry("없는업종")[0] is None
+    assert len(localdata_license.INDUSTRIES) == 208
+
+
 def test_localdata_degrades_with_region_offline(monkeypatch, tmp_path):
     """region까지 줘도 네트워크 차단이면 크래시 없이 강등."""
     monkeypatch.setattr(localdata_license, "CACHE_DIR", tmp_path)

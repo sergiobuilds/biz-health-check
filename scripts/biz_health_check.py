@@ -33,14 +33,25 @@ PROVIDERS = (
 )
 
 
-def run(b_no: str, name: str | None = None, region: str | None = None,
+# 사업자번호 없이는 조회 자체가 불가능한 provider (체납·인허가는 상호 기반 가능)
+B_NO_REQUIRED = (nts_status, nps_pension, fsc_corp, pps_sanction)
+
+
+def run(b_no: str | None, name: str | None = None, region: str | None = None,
         industries: list[str] | None = None) -> dict:
     """provider 6종 순차 실행 → 리포트 구조 반환 (출력 형식과 분리)."""
-    no = common.normalize_b_no(b_no)
+    no = common.normalize_b_no(b_no) if b_no is not None else None
+    if no is None and not (name or "").strip():
+        raise ValueError("사업자등록번호 또는 --name 상호 중 하나는 필요합니다.")
     sections = []
     for title, module in PROVIDERS:
         try:
-            if module is localdata_license:
+            if no is None and module in B_NO_REQUIRED:
+                env = common.envelope(getattr(module, "SOURCE", title),
+                                      common.STATUS_UNAVAILABLE, common.ORIGIN_PUBLIC,
+                                      note="사업자등록번호가 없어 이 항목은 조회할 수 "
+                                           "없습니다. 번호를 알면 함께 지정하세요.")
+            elif module is localdata_license:
                 env = module.lookup(no, name=name, region=region,
                                     industries=industries)
             else:
@@ -53,7 +64,9 @@ def run(b_no: str, name: str | None = None, region: str | None = None,
                                   note=f"provider 내부 오류: {type(err).__name__}")
         sections.append({"section": title, **env})
     return {
-        "input": {"b_no": no, "b_no_formatted": common.format_b_no(no), "name": name},
+        "input": {"b_no": no,
+                  "b_no_formatted": common.format_b_no(no) if no else None,
+                  "name": name},
         "generated_at": common.now_iso(),
         "principle": PRINCIPLE,
         "providers": sections,
@@ -92,7 +105,7 @@ def render_text(report: dict) -> str:
     lines = [
         bar,
         "사업자 실사 사실 조회 리포트 — biz-health-check",
-        f"대상: {report['input']['b_no_formatted']}"
+        f"대상: {report['input']['b_no_formatted'] or '(사업자번호 미지정)'}"
         + (f" (상호: {name})" if name else " (상호 미지정)"),
         f"생성 시각: {report['generated_at']}",
         f"원칙: {report['principle']}",
@@ -122,7 +135,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="biz_health_check",
         description="사업자등록번호 실사 사실 조회 리포트 (사실·출처·시각만, 해석 없음)")
-    parser.add_argument("b_no", help="사업자등록번호 10자리 (하이픈 허용)")
+    parser.add_argument("b_no", nargs="?", default=None,
+                        help="사업자등록번호 10자리 (하이픈 허용). 모르면 생략하고 "
+                             "--name(+--region)으로 상호 기반 조회")
     parser.add_argument("--name", help="상호·법인명 — 국민연금/체납 명단/금융위 조회에 필요")
     parser.add_argument("--region", help="시군구 (인허가 조회용 — 예: 제주제주시, 서울종로구)")
     parser.add_argument("--industry", action="append", dest="industries",
