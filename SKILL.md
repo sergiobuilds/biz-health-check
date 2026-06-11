@@ -18,7 +18,7 @@ metadata:
 2. 국민연금 가입 사업장 내역 — 가입자수·당월 고지금액 (data.go.kr 3046071). 직원 규모와 그 추이가 보인다
 3. 국세청 고액·상습체납자 명단공개 대조 — 누리집 공개 검색 (무인증)
 4. 금융위 기업기본정보 — 법인 개요: 대표자·설립일·업종 (data.go.kr 15043184)
-5. 조달청 나라장터 부정당제재 내역 — 제재 이력·기간·처분상태·근거법률 (data.go.kr 15137996 fileData odcloud API). 자료에 사업자등록번호가 수록돼 정확 일치 조회 가능
+5. 조달청 나라장터 부정당제재업체정보 — 조회시점 현재 유효한 제재의 기간·제재기관·근거법률 (data.go.kr 15129466, 사업자등록번호 정확 일치 조회). 만료·해제 건과 나라장터 미등록업체·개인 제재는 미제공
 
 공시 유무는 기존 `k-dart` 스킬을 함께 쓰면 된다.
 
@@ -46,7 +46,7 @@ metadata:
   - 국세청 사업자등록 상태조회: https://www.data.go.kr/data/15081808/openapi.do
   - 국민연금 가입 사업장 내역: https://www.data.go.kr/data/3046071/openapi.do
   - 금융위 기업기본정보: https://www.data.go.kr/data/15043184/openapi.do
-  - 조달청 나라장터 부정당제재 내역 (fileData 오픈API): https://www.data.go.kr/data/15137996/fileData.do
+  - 조달청 나라장터 사용자정보 서비스 (부정당제재업체정보조회 포함): https://www.data.go.kr/data/15129466/openapi.do
 - 키를 코드·로그·리포트에 평문으로 남기지 않는다.
 
 ## Usage
@@ -68,4 +68,4 @@ python3 scripts/biz_health_check.py 1248100998 --json   # JSON 출력
 - 국민연금 가입 사업장: `https://apis.data.go.kr/B552015/NpsBplcInfoInqireService`
 - 체납 명단공개 검색: `https://www.nts.go.kr/nts/ad/openInfo/selectList.do`
 - 금융위 기업기본정보: `https://apis.data.go.kr/1160100/GetCorpBasicInfoService_V2/getCorpOutline_V2`
-- 부정당제재 내역: `https://api.odcloud.kr/api/15137996/v1/uddi:475c63ef-b675-4450-9735-907783288fb8` (수동 대조: 나라장터 `https://www.g2b.go.kr`)
+- 부정당제재업체정보: `https://apis.data.go.kr/1230000/ao/UsrInfoService02/getUnptRsttCorpInfo02` (수동 대조: 나라장터 `https://www.g2b.go.kr`)
