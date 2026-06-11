@@ -1,6 +1,6 @@
 """국세청 고액·상습체납자 명단공개 검색 provider (nts.go.kr 무인증 공개 검색).
 
-실확인 (2026-06-11, requests로 브라우저 없이 재현 — docs/BUILD-NOTES.md):
+실확인 (2026-06-11, requests로 브라우저 없이 재현):
 
 - POST https://www.nts.go.kr/nts/ad/openInfo/selectList.do (무인증)
 - tcd=1 법인 명단: searchType 1=법인명 2=대표자 3=법인 소재지 4=대표자 주소

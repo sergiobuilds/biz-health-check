@@ -1,6 +1,6 @@
 """국민연금 가입 사업장 내역 provider (공공데이터포털 3046071).
 
-스펙 실확인 (2026-06-11, data.go.kr 게시 명세 — docs/BUILD-NOTES.md에 출처 기록):
+스펙 실확인 (2026-06-11, data.go.kr 게시 명세):
 
 - base: https://apis.data.go.kr/B552015/NpsBplcInfoInqireServiceV2 (V2)
 - getBassInfoSearchV2 (기본): wkplNm(상호), bzowrRgstNo(앞6자리) — **camelCase** — 사업자번호
@@ -38,8 +38,8 @@ NEEDS_KEY_NOTE = (
     f"활용신청을 하고 발급 키를 설정하세요: {APPLY_URL}"
 )
 NAME_REQUIRED_NOTE = (
-    "이 API는 사업장명(wkplNm) 없이는 사업자등록번호는 앞 6자리만 공개되어 "
-    "번호 단독 특정이 불가합니다. --name 으로 상호를 지정해야 조회할 수 있습니다. "
+    "이 API는 사업자등록번호가 앞 6자리만 공개되어 번호 단독 특정이 불가합니다. "
+    "--name 으로 상호(사업장명 wkplNm)를 지정해야 조회할 수 있습니다. "
     f"명세: {APPLY_URL}"
 )
 DISCLOSURE_NOTE = ("사업자등록번호는 앞 6자리만 공개(뒷자리 마스킹)되므로 입력 번호와의 "

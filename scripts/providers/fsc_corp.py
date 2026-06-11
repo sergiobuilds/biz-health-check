@@ -6,8 +6,7 @@
 - 사업자번호 교차검증: 응답 item에 사업자번호로 볼 수 있는 필드(bzno)가 있으면
   입력 번호와 대조하고, 없으면 "교차검증 불가" 사실을 그대로 표기한다 (단정 금지).
 - 활용신청 안 된 키는 게이트웨이가 HTTP 403 "Forbidden"을 반환
-  (2026-06-11 실측 — docs/BUILD-NOTES.md) → status="needs-key" 안내.
-- 어댑터 패턴은 koat-royalty lookup/fsc_corp.py에서 이식 (도메인 코드 제외).
+  (2026-06-11 실측) → status="needs-key" 안내.
 """
 
 from __future__ import annotations

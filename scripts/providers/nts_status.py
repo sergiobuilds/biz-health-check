@@ -3,7 +3,7 @@
 - 스펙: https://www.data.go.kr/data/15081808/openapi.do
   (POST https://api.odcloud.kr/api/nts-businessman/v1/status, b_no 배치 최대 100건)
 - 라이브 검증: 2026-06-11 본 스킬 빌드 중 124-81-00998(삼성전자, 공개 정보)로
-  "계속사업자" 응답 확인 (docs/BUILD-NOTES.md).
+  "계속사업자" 응답 확인.
 - DATA_GO_KR_KEY 없으면 status="needs-key" + 발급 안내. 키는 env 동적 참조,
   코드·로그·note에 키 문자열을 넣지 않는다.
 - 해석 라벨 없음 — b_stt·tax_type 등 upstream 필드 원문 그대로 반환.
