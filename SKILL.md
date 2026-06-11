@@ -12,13 +12,15 @@ metadata:
 
 ## What this skill does
 
-사업자등록번호(+상호 선택)를 입력하면 무료 공공 데이터 5종을 교차 조회해 실사 리포트 한 장을 만든다.
+사업자등록번호(+상호 선택)를 입력하면 무료 공공 데이터 6종을 교차 조회해 실사 리포트 한 장을 만든다.
 
 1. 국세청 사업자등록 상태 — 계속/휴업/폐업, 과세유형, 폐업일 (data.go.kr 15081808)
 2. 국민연금 가입 사업장 내역 — 가입자수·당월 고지금액·월별 취득/상실 (data.go.kr 3046071, V2). 직원 규모와 그 추이가 보인다
 3. 국세청 고액·상습체납자 명단공개 대조 — 누리집 공개 검색 (무인증)
 4. 금융위 기업기본정보 — 법인 개요: 대표자·설립일·업종 (data.go.kr 15043184)
 5. 조달청 나라장터 부정당제재업체정보 — 조회시점 현재 유효한 제재의 기간·제재기관·근거법률 (data.go.kr 15129466, 사업자등록번호 정확 일치 조회). 만료·해제 건과 나라장터 미등록업체·개인 제재는 미제공
+
+6. 지방행정 인허가 영업상태 — 동네 사업장(식당·카페·숙박·미용실·약국 등 인허가 업종 16종)의 영업/휴업/폐업, 인허가일자(업력), 폐업일자, 업태, 주소 (LOCALDATA file.localdata.go.kr, 무인증). `--region 시군구` 지정 필요
 
 공시 유무는 기존 `k-dart` 스킬을 함께 쓰면 된다.
 
@@ -54,6 +56,8 @@ metadata:
 ```bash
 DATA_GO_KR_KEY=<인증키> python3 scripts/biz_health_check.py 124-81-00998 --name 삼성전자
 python3 scripts/biz_health_check.py 1248100998 --json   # JSON 출력
+# 동네 사업장(인허가 업종): 지역 지정 — 기본 검색 업종은 일반음식점·휴게음식점·숙박업
+python3 scripts/biz_health_check.py 123-45-67890 --name 호텔샬롬 --region 제주제주시 --industry lodgings
 ```
 
 ## Privacy boundary
@@ -61,6 +65,7 @@ python3 scripts/biz_health_check.py 1248100998 --json   # JSON 출력
 - 입력한 사업자번호·상호는 공공데이터포털·국세청 누리집 upstream으로 전송된다.
 - 국민연금 데이터는 사업자번호 앞 6자리만 공개되므로, 6자리 일치 + 상호 유사 후보를 나열할 뿐 사업장 동일성을 단정하지 않는다.
 - 체납 명단공개 자료에는 사업자등록번호가 수록되지 않아 상호·법인명 문자열 일치의 공개 사실만 나열한다 (동명 상호 가능성은 사용자 판단).
+- 인허가(LOCALDATA) 자료에도 사업자등록번호가 수록되지 않아 같은 방식의 상호 매칭이다. 자료는 매일 갱신, 2일 전 기준 현행화.
 
 ## Official surfaces
 
@@ -69,3 +74,4 @@ python3 scripts/biz_health_check.py 1248100998 --json   # JSON 출력
 - 체납 명단공개 검색: `https://www.nts.go.kr/nts/ad/openInfo/selectList.do`
 - 금융위 기업기본정보: `https://apis.data.go.kr/1160100/GetCorpBasicInfoService_V2/getCorpOutline_V2`
 - 부정당제재업체정보: `https://apis.data.go.kr/1230000/ao/UsrInfoService02/getUnptRsttCorpInfo02` (수동 대조: 나라장터 `https://www.g2b.go.kr`)
+- 인허가 영업상태: `https://file.localdata.go.kr/file/download/<업종slug>/info?orgCode=<지자체코드>` (무인증, Referer 필요, CP949 CSV)

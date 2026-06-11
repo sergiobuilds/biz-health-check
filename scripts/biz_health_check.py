@@ -17,8 +17,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from providers import (common, fsc_corp, nps_pension, nts_delinquent,  # noqa: E402
-                       nts_status, pps_sanction)
+from providers import (common, fsc_corp, localdata_license,  # noqa: E402
+                       nps_pension, nts_delinquent, nts_status, pps_sanction)
 
 PRINCIPLE = ("조회된 사실·출처·조회시각만 나열한다. "
              "점수·등급·해석 라벨은 산출하지 않는다 — 판단은 사용자 몫이다.")
@@ -29,16 +29,22 @@ PROVIDERS = (
     ("국세청 고액·상습체납자 명단공개", nts_delinquent),
     ("금융위 기업기본정보(법인 개요)", fsc_corp),
     ("조달청 부정당업자 제재", pps_sanction),
+    ("지방행정 인허가 영업상태(소규모 사업장)", localdata_license),
 )
 
 
-def run(b_no: str, name: str | None = None) -> dict:
-    """provider 5종 순차 실행 → 리포트 구조 반환 (출력 형식과 분리)."""
+def run(b_no: str, name: str | None = None, region: str | None = None,
+        industries: list[str] | None = None) -> dict:
+    """provider 6종 순차 실행 → 리포트 구조 반환 (출력 형식과 분리)."""
     no = common.normalize_b_no(b_no)
     sections = []
     for title, module in PROVIDERS:
         try:
-            env = module.lookup(no, name=name)
+            if module is localdata_license:
+                env = module.lookup(no, name=name, region=region,
+                                    industries=industries)
+            else:
+                env = module.lookup(no, name=name)
         except ValueError:
             raise
         except Exception as err:  # 단일 provider 장애가 리포트 전체를 막지 않게
@@ -118,6 +124,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="사업자등록번호 실사 사실 조회 리포트 (사실·출처·시각만, 해석 없음)")
     parser.add_argument("b_no", help="사업자등록번호 10자리 (하이픈 허용)")
     parser.add_argument("--name", help="상호·법인명 — 국민연금/체납 명단/금융위 조회에 필요")
+    parser.add_argument("--region", help="시군구 (인허가 조회용 — 예: 제주제주시, 서울종로구)")
+    parser.add_argument("--industry", action="append", dest="industries",
+                        help="인허가 업종 slug (반복 지정 가능 — 기본: 일반음식점·휴게음식점·숙박업)")
     parser.add_argument("--json", action="store_true", help="JSON으로 출력")
     return parser
 
@@ -125,7 +134,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        report = run(args.b_no, name=args.name)
+        report = run(args.b_no, name=args.name, region=args.region,
+                     industries=args.industries)
     except ValueError as err:
         print(json.dumps({"error": str(err)}, ensure_ascii=False), file=sys.stderr)
         return 2

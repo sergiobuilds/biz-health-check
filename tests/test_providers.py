@@ -7,9 +7,11 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
 
 from providers import common  # noqa: E402
-from providers import fsc_corp, nps_pension, nts_delinquent, nts_status, pps_sanction  # noqa: E402
+from providers import (fsc_corp, localdata_license, nps_pension,  # noqa: E402
+                       nts_delinquent, nts_status, pps_sanction)
 
-ALL_PROVIDERS = [nts_status, nps_pension, nts_delinquent, fsc_corp, pps_sanction]
+ALL_PROVIDERS = [nts_status, nps_pension, nts_delinquent, fsc_corp, pps_sanction,
+                 localdata_license]
 ENVELOPE_KEYS = {"source", "looked_up_at", "status", "result", "origin", "note"}
 
 
@@ -51,6 +53,23 @@ def test_provider_degrades_offline(provider):
     assert env["origin"] in common.VALID_ORIGINS
     assert env["status"] != common.STATUS_OK            # 오프라인이므로 ok 불가
     assert env["result"] is None and env["note"]
+
+
+def test_localdata_region_resolution_offline():
+    """지역 해석은 네트워크 없이 동작 — 정확/모호/미존재 3경로."""
+    code, hits = localdata_license._resolve_region("제주제주시")
+    assert code and hits == ["제주제주시"]
+    code, hits = localdata_license._resolve_region("고성")       # 강원고성군/경남고성군
+    assert code is None and len(hits) >= 2
+    code, hits = localdata_license._resolve_region("없는지역명")
+    assert code is None and hits == []
+
+
+def test_localdata_degrades_with_region_offline(monkeypatch, tmp_path):
+    """region까지 줘도 네트워크 차단이면 크래시 없이 강등."""
+    monkeypatch.setattr(localdata_license, "CACHE_DIR", tmp_path)
+    env = localdata_license.lookup("124-81-00998", name="테스트상사", region="제주제주시")
+    assert env["status"] == "unavailable" and env["note"]
 
 
 def test_no_judgment_labels():
