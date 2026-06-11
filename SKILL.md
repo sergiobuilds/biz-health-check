@@ -65,7 +65,7 @@ python3 scripts/biz_health_check.py 1248100998 --json   # JSON 출력
 ## Official surfaces
 
 - 국세청 상태조회: `POST https://api.odcloud.kr/api/nts-businessman/v1/status`
-- 국민연금 가입 사업장: `https://apis.data.go.kr/B552015/NpsBplcInfoInqireService`
+- 국민연금 가입 사업장: `https://apis.data.go.kr/B552015/NpsBplcInfoInqireServiceV2` (요청 파라미터 camelCase)
 - 체납 명단공개 검색: `https://www.nts.go.kr/nts/ad/openInfo/selectList.do`
 - 금융위 기업기본정보: `https://apis.data.go.kr/1160100/GetCorpBasicInfoService_V2/getCorpOutline_V2`
 - 부정당제재업체정보: `https://apis.data.go.kr/1230000/ao/UsrInfoService02/getUnptRsttCorpInfo02` (수동 대조: 나라장터 `https://www.g2b.go.kr`)
